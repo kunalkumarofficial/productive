@@ -43,7 +43,27 @@ sending your data anywhere.
 ## Requirements
 
 - macOS 14 (Sonoma) or later
-- Xcode 16 or later to build
+- Xcode 16 or later — **only if you build it yourself**; see below for a
+  no-Xcode option
+
+## Running without Xcode
+
+Every push builds a ready-to-run, universal (Apple Silicon + Intel) app on CI:
+
+1. Open the repo's **Actions** tab, click the latest green **Build** run, and
+   download the **Productive.app** artifact (requires being signed in to
+   GitHub). Tagged releases (`v*`) also attach the zip under **Releases**,
+   downloadable without signing in.
+2. Unzip it and drag `Productive.app` into `/Applications`.
+3. The app is ad-hoc signed, not notarized by Apple, so macOS will block the
+   first launch of a downloaded copy. Clear the quarantine flag once:
+
+   ```sh
+   xattr -cr /Applications/Productive.app
+   ```
+
+   Then open it normally. (Alternatively: System Settings → Privacy &
+   Security → "Open Anyway" after the first blocked attempt.)
 
 ## Building
 
