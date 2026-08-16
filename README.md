@@ -85,55 +85,66 @@ developer" dialog. There are two paths; they are not exclusive.
 
 ### Path A — Notarized DMG on GitHub Releases (automated)
 
-The `Release` workflow (`.github/workflows/release.yml`) builds, signs,
-notarizes, and staples a DMG, then attaches it to a GitHub Release. One-time
-setup:
+One-time setup, on your Mac, from the repo root:
 
-1. **Create a Developer ID Application certificate.** In Xcode:
-   Settings → Accounts → your Apple ID → your team → *Manage Certificates…* →
-   **+** → *Developer ID Application*.
-2. **Export it as a .p12.** Open *Keychain Access*, find
-   "Developer ID Application: …", right-click → *Export…*, choose `.p12` and
-   set a password. Then base64 it:
+1. In Xcode: Settings → Accounts → your team → *Manage Certificates…* →
+   **+** → **Developer ID Application** (skip if you already have one).
+2. Run the setup script — it finds your certificate, walks you through
+   exporting it, asks for your Apple ID + an app-specific password, and stores
+   all the GitHub secrets for you:
 
    ```sh
-   base64 -i DeveloperID.p12 | pbcopy
+   ./scripts/setup-signing.sh
    ```
-3. **Create an app-specific password** for notarization at
-   [account.apple.com](https://account.apple.com) → Sign-In and Security →
-   App-Specific Passwords.
-4. **Add repository secrets** (GitHub repo → Settings → Secrets and variables →
-   Actions):
 
-   | Secret | Value |
-   | --- | --- |
-   | `MACOS_CERTIFICATE` | the base64 .p12 from step 2 |
-   | `MACOS_CERTIFICATE_PASSWORD` | the .p12 password |
-   | `KEYCHAIN_PASSWORD` | any random string |
-   | `APPLE_TEAM_ID` | your 10-character Team ID (Membership page) |
-   | `NOTARY_APPLE_ID` | your Apple ID email |
-   | `NOTARY_PASSWORD` | the app-specific password from step 3 |
+Then, to ship any release:
 
-5. **Ship:** `git tag v1.0.0 && git push origin v1.0.0`. A few minutes later
-   the Release page has a `Productive.dmg` anyone can download, open, and drag
-   to Applications — Gatekeeper-clean.
+```sh
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+A few minutes later the GitHub Releases page has a signed, notarized
+`Productive.dmg` anyone can download, open, and drag to Applications —
+Gatekeeper-clean, no warnings. The version number is stamped from the tag
+automatically.
+
+<details>
+<summary>Secrets the script stores (for reference, or to set manually)</summary>
+
+| Secret | Value |
+| --- | --- |
+| `MACOS_CERTIFICATE` | base64 of the Developer ID Application `.p12` |
+| `MACOS_CERTIFICATE_PASSWORD` | the `.p12` password |
+| `KEYCHAIN_PASSWORD` | any random string |
+| `APPLE_TEAM_ID` | your 10-character Team ID |
+| `NOTARY_APPLE_ID` | your Apple ID email |
+| `NOTARY_PASSWORD` | an app-specific password from account.apple.com |
+
+</details>
 
 ### Path B — Mac App Store
 
 The app already satisfies the App Store's technical requirements: App Sandbox
-on, hardened runtime on, app category set, icon included. From Xcode:
+on, hardened runtime on, app category set, icon included, export-compliance
+key embedded (so the "does your app use encryption?" question is pre-answered).
 
-1. Set your **Team** under *Signing & Capabilities* (and keep the bundle ID,
-   or change it to one registered to your team).
-2. Create the app record in [App Store Connect](https://appstoreconnect.apple.com)
-   with the same bundle ID.
-3. *Product → Archive*, then in the Organizer choose *Distribute App →
-   App Store Connect*. Xcode handles signing and upload.
-4. In App Store Connect fill in metadata. For the privacy questionnaire the
-   honest answer is the best possible one: **Data Not Collected** — the app has
-   no network access at all. Provide 1–3 screenshots (1280×800 or 2880×1800),
-   a description, keywords, and a support URL (this repo works), then submit
-   for review.
+1. Sign in to Xcode with your Apple ID (Settings → Accounts) — once.
+2. Create the app record in
+   [App Store Connect](https://appstoreconnect.apple.com) → My Apps → **+** →
+   New App: platform macOS, bundle ID `com.kunalkumar.Productive`. If the name
+   "Productive" is taken, pick a variant (e.g. "Productive – Local Tasks");
+   the store name can differ from the app's on-disk name.
+3. Archive and upload with one command:
+
+   ```sh
+   ./scripts/release-appstore.sh 1.0.0
+   ```
+
+4. In App Store Connect: attach the build, add 1–3 screenshots (1280×800 or
+   2880×1800 — ⌘⇧4 then Space, click the app window), a description, and a
+   support URL (this repo works). For the privacy questionnaire the honest
+   answer is the best possible one: **Data Not Collected** — the app has no
+   network access at all. Submit for review.
 
 ## Where your data lives
 

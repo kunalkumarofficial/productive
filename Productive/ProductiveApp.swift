@@ -79,6 +79,14 @@ struct AppCommands: Commands {
                 .keyboardShortcut("8", modifiers: .command)
         }
 
+        CommandGroup(replacing: .help) {
+            Button("Productive Help") {
+                if let url = URL(string: "https://github.com/kunalkumarofficial/productive#readme") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+        }
+
         CommandMenu("Timer") {
             Button("Start / Pause") { store.focusTimer.toggle() }
                 .keyboardShortcut("p", modifiers: [.command, .shift])

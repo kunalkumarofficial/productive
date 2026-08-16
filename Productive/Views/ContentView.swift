@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         @Bindable var store = store
@@ -12,6 +13,11 @@ struct ContentView: View {
             detailView
         }
         .searchable(text: $store.searchText, placement: .sidebar, prompt: "Search")
+        .onChange(of: scenePhase) {
+            if scenePhase != .active {
+                store.saveNow()
+            }
+        }
         .alert(
             "Data Problem",
             isPresented: Binding(

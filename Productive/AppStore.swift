@@ -112,6 +112,17 @@ final class AppStore {
     }
 
     func importData(_ data: Data) throws {
+        // Reject files that parse as JSON but are clearly not a Productive
+        // backup — otherwise a stray .json would silently replace everything
+        // with empty data (the tolerant decoder treats missing keys as []).
+        let knownKeys: Set<String> = [
+            "schemaVersion", "tasks", "projects", "habits", "notes", "focusSessions",
+        ]
+        guard let object = try? JSONSerialization.jsonObject(with: data),
+              let dict = object as? [String: Any],
+              dict.keys.contains(where: knownKeys.contains) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
         let decoded = try Persistence.makeDecoder().decode(AppData.self, from: data)
         Persistence.backUpCurrentFile()
         apply(decoded)
